@@ -5,7 +5,7 @@
 [![Docker](https://img.shields.io/badge/Docker-supported-blue)](https://www.docker.com/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-A high-performance, production-ready Kafka proxy written in C# that provides load balancing and failover capabilities for RedPanda/Kafka clusters. Present a single endpoint to your clients while automatically distributing connections across multiple brokers.
+A high-performance, production-ready Redpanda proxy written in C# that provides load balancing and failover capabilities for RedPanda/Kafka clusters. Present a single endpoint to your clients while automatically distributing connections across multiple brokers.
 
 ## ✨ Features
 
@@ -27,8 +27,8 @@ A high-performance, production-ready Kafka proxy written in C# that provides loa
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/redpanda-kafka-proxy.git
-cd redpanda-kafka-proxy
+git clone https://github.com/yourusername/redpanda-proxy.git
+cd redpanda-proxy
 dotnet build
 ```
 
@@ -38,7 +38,7 @@ dotnet build
 
 ```json
 {
-  "KafkaProxy": {
+  "RedpandaProxy": {
     "ListenPort": 9092,
     "LoadBalancing": "RoundRobin",
     "Brokers": [
@@ -65,7 +65,7 @@ dotnet build
 dotnet run --project src/
 ```
 
-3. **Connect your Kafka clients** to `localhost:9092`
+3. **Connect your Redpanda clients** to `localhost:9092`
 
 The proxy will automatically route connections to healthy brokers using your chosen load balancing strategy.
 
@@ -95,9 +95,9 @@ The proxy will automatically route connections to healthy brokers using your cho
 Override any configuration setting using environment variables:
 
 ```bash
-export KafkaProxy__ListenPort=9093
-export KafkaProxy__LoadBalancing=LeastConnections
-export KafkaProxy__Brokers__0__Host=new-broker.example.com
+export RedpandaProxy__ListenPort=9093
+export RedpandaProxy__LoadBalancing=LeastConnections
+export RedpandaProxy__Brokers__0__Host=new-broker.example.com
 ```
 
 ## 🐳 Docker Deployment
@@ -112,20 +112,20 @@ docker-compose up -d
 
 This starts:
 - 3 RedPanda brokers (ports 19092, 19093, 19094)
-- Kafka proxy (port 9092)
+- Redpanda proxy (port 9092)
 
 ### Production Docker
 
 ```bash
 # Build image
-docker build -t kafka-proxy .
+docker build -t redpanda-proxy .
 
 # Run container
 docker run -d \
-  --name kafka-proxy \
+  --name redpanda-proxy \
   -p 9092:9092 \
   -v $(pwd)/config:/app/config:ro \
-  kafka-proxy
+  redpanda-proxy
 ```
 
 ## 🏗️ Production Deployment
@@ -134,21 +134,21 @@ docker run -d \
 
 1. **Publish the application**:
 ```bash
-dotnet publish src/ -c Release -o /opt/kafka-proxy
+dotnet publish src/ -c Release -o /opt/redpanda-proxy
 ```
 
 2. **Install systemd service**:
 ```bash
-sudo cp deployment/kafka-proxy.service /etc/systemd/system/
+sudo cp deployment/redpanda-proxy.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable kafka-proxy
-sudo systemctl start kafka-proxy
+sudo systemctl enable redpanda-proxy
+sudo systemctl start redpanda-proxy
 ```
 
 3. **Check status**:
 ```bash
-sudo systemctl status kafka-proxy
-sudo journalctl -u kafka-proxy -f
+sudo systemctl status redpanda-proxy
+sudo journalctl -u redpanda-proxy -f
 ```
 
 ### Kubernetes
@@ -159,35 +159,35 @@ Example Kubernetes deployment:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kafka-proxy
+  name: redpanda-proxy
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: kafka-proxy
+      app: redpanda-proxy
   template:
     metadata:
       labels:
-        app: kafka-proxy
+        app: redpanda-proxy
     spec:
       containers:
-      - name: kafka-proxy
-        image: kafka-proxy:latest
+      - name: redpanda-proxy
+        image: redpanda-proxy:latest
         ports:
         - containerPort: 9092
         env:
-        - name: KafkaProxy__Brokers__0__Host
+        - name: RedpandaProxy__Brokers__0__Host
           value: "redpanda-1.kafka.svc.cluster.local"
-        - name: KafkaProxy__Brokers__1__Host
+        - name: RedpandaProxy__Brokers__1__Host
           value: "redpanda-2.kafka.svc.cluster.local"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: kafka-proxy-service
+  name: redpanda-proxy-service
 spec:
   selector:
-    app: kafka-proxy
+    app: redpanda-proxy
   ports:
   - port: 9092
     targetPort: 9092
@@ -205,9 +205,9 @@ The proxy provides comprehensive logging for operational monitoring:
 
 Example log output:
 ```
-info: KafkaProxy.KafkaProxyService[0] Kafka Proxy listening on 0.0.0.0:9092
-info: KafkaProxy.BrokerPool[0] Connected to broker redpanda-1:9092
-info: KafkaProxy.ClientConnectionHandler[0] Routing client 172.17.0.1:54320 to broker redpanda-2:9092
+info: RedpandaProxy.RedpandaProxyService[0] Redpanda Proxy listening on 0.0.0.0:9092
+info: RedpandaProxy.BrokerPool[0] Connected to broker redpanda-1:9092
+info: RedpandaProxy.ClientConnectionHandler[0] Routing client 172.17.0.1:54320 to broker redpanda-2:9092
 ```
 
 ## 🧪 Testing
@@ -226,19 +226,19 @@ Use the provided docker-compose setup:
 # Start test environment
 docker-compose up -d
 
-# Test with kafka-console-producer
-kafka-console-producer --bootstrap-server localhost:9092 --topic test-topic
+# Test with redpanda-console-producer
+redpanda-console-producer --bootstrap-server localhost:9092 --topic test-topic
 
-# Test with kafka-console-consumer
-kafka-console-consumer --bootstrap-server localhost:9092 --topic test-topic --from-beginning
+# Test with redpanda-console-consumer
+redpanda-console-consumer --bootstrap-server localhost:9092 --topic test-topic --from-beginning
 ```
 
 ### Load Testing
 
-Example using kafka-producer-perf-test:
+Example using redpanda-producer-perf-test:
 
 ```bash
-kafka-producer-perf-test \
+redpanda-producer-perf-test \
   --topic test-topic \
   --num-records 100000 \
   --record-size 1024 \
@@ -257,8 +257,8 @@ kafka-producer-perf-test \
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourusername/redpanda-kafka-proxy.git
-cd redpanda-kafka-proxy
+git clone https://github.com/dipakdotyadav/redpanda-proxy.git
+cd redpanda-proxy
 dotnet restore
 dotnet build
 ```
@@ -306,9 +306,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🤝 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/redpanda-kafka-proxy/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/redpanda-kafka-proxy/discussions)
-- **Documentation**: [Wiki](https://github.com/yourusername/redpanda-kafka-proxy/wiki)
+- **Issues**: [GitHub Issues](https://github.com/dipakdotyadav/redpanda-proxy/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/dipakdotyadav/redpanda-proxy/discussions)
+- **Documentation**: [Wiki](https://github.com/dipakdotyadav/redpanda-proxy/wiki)
 
 ## 🙏 Acknowledgments
 
