@@ -1,0 +1,79 @@
+# docker-compose.yml - For testing with RedPanda
+version: '3.8'
+services:
+  redpanda-1:
+    image: redpandadata/redpanda:latest
+    container_name: redpanda-1
+    command:
+      - redpanda
+      - start
+      - --node-id=1
+      - --kafka-addr=PLAINTEXT://0.0.0.0:19092
+      - --advertise-kafka-addr=PLAINTEXT://localhost:19092
+      - --rpc-addr=0.0.0.0:33145
+      - --advertise-rpc-addr=localhost:33145
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+    ports:
+      - 19092:19092
+      - 9644:9644
+    volumes:
+      - redpanda-1-data:/var/lib/redpanda/data
+
+  redpanda-2:
+    image: redpandadata/redpanda:latest
+    container_name: redpanda-2
+    command:
+      - redpanda
+      - start
+      - --node-id=2
+      - --kafka-addr=PLAINTEXT://0.0.0.0:19093
+      - --advertise-kafka-addr=PLAINTEXT://localhost:19093
+      - --rpc-addr=0.0.0.0:33146
+      - --advertise-rpc-addr=localhost:33146
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+    ports:
+      - 19093:19093
+    volumes:
+      - redpanda-2-data:/var/lib/redpanda/data
+
+  redpanda-3:
+    image: redpandadata/redpanda:latest
+    container_name: redpanda-3
+    command:
+      - redpanda
+      - start
+      - --node-id=3
+      - --kafka-addr=PLAINTEXT://0.0.0.0:19094
+      - --advertise-kafka-addr=PLAINTEXT://localhost:19094
+      - --rpc-addr=0.0.0.0:33147
+      - --advertise-rpc-addr=localhost:33147
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+    ports:
+      - 19094:19094
+    volumes:
+      - redpanda-3-data:/var/lib/redpanda/data
+
+  redpanda-proxy:
+    build: .
+    container_name: redpanda-proxy
+    ports:
+      - "9092:9092"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - redpanda-1
+      - redpanda-2
+      - redpanda-3
+    volumes:
+      - ./appsettings.json:/app/appsettings.json:ro
+
+volumes:
+  redpanda-1-data:
+  redpanda-2-data:
+  redpanda-3-data:

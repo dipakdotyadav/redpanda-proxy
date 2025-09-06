@@ -1,0 +1,19 @@
+[Unit]
+Description=Redpanda Proxy Service
+After=network.target
+
+[Service]
+Type=notify
+User=redpanda-proxy
+Group=redpanda-proxy
+WorkingDirectory=/opt/redpanda-proxy
+ExecStart=/usr/bin/dotnet /opt/redpanda-proxy/RedpandaProxy.dll
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target
